@@ -1,0 +1,47 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# Environment & secrets (never commit)
+.env
+.env.*
+!.env.example
+
+# Databricks CLI bundle — local sync, Terraform state, providers
+.databricks/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors (optional local junk)
+*.swp
+*.swo
+*~

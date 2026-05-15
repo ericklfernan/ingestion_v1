@@ -1,0 +1,78 @@
+resources:
+  jobs:
+    vendor_ingestion_job:
+      name: vendor_ingestion_job
+      budget_policy_id: ${var.budget_policy_id}
+      email_notifications:
+        on_failure:
+          - roderick.fernan2@aetna.com
+        on_success:
+          - roderick.fernan2@aetna.com
+      max_concurrent_runs: 10
+      parameters:
+        - name: env
+          default: ${var.env}
+        - name: feed_key
+          default: ""
+        - name: request_json
+          default: ""
+        - name: dispatch_run_id
+          default: ""
+        - name: batch_max_per_run
+          default: "20"
+      tasks:
+        - task_key: request_intake
+          notebook_task:
+            notebook_path: ../../notebooks/001_request_intake.py
+            base_parameters:
+              env: "{{job.parameters.env}}"
+              feed_key: "{{job.parameters.feed_key}}"
+              request_json: "{{job.parameters.request_json}}"
+              dispatch_run_id: "{{job.parameters.dispatch_run_id}}"
+              batch_max_per_run: "{{job.parameters.batch_max_per_run}}"
+
+        - task_key: check_eligible_files
+          depends_on:
+            - task_key: request_intake
+          condition_task:
+            op: EQUAL_TO
+            left: "{{tasks.request_intake.values.has_eligible_files}}"
+            right: "true"
+
+        - task_key: manifest
+          depends_on:
+            - task_key: check_eligible_files
+              outcome: "true"
+          notebook_task:
+            notebook_path: ../../notebooks/002_manifest.py
+            base_parameters:
+              env: "{{job.parameters.env}}"
+              feed_key: "{{job.parameters.feed_key}}"
+              dispatch_run_id: "{{job.parameters.dispatch_run_id}}"
+
+        - task_key: ingest_for_each
+          depends_on:
+            - task_key: manifest
+          for_each_task:
+            concurrency: 4
+            inputs: '{{tasks.request_intake.values.batch_inputs}}'
+            task:
+              task_key: ingest_iteration
+              notebook_task:
+                notebook_path: ../../notebooks/003_ingest_batch.py
+                base_parameters:
+                  env: "{{job.parameters.env}}"
+                  feed_key: "{{job.parameters.feed_key}}"
+                  dispatch_run_id: "{{job.parameters.dispatch_run_id}}"
+                  batch_id: "{{input.batch_id}}"
+                  batch_file_paths_json: "{{input.batch_file_paths_json}}"
+
+        - task_key: finalize
+          depends_on:
+            - task_key: ingest_for_each
+          notebook_task:
+            notebook_path: ../../notebooks/004_finalize.py
+            base_parameters:
+              env: "{{job.parameters.env}}"
+              feed_key: "{{job.parameters.feed_key}}"
+              dispatch_run_id: "{{job.parameters.dispatch_run_id}}"

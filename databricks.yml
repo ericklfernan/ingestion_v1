@@ -1,0 +1,28 @@
+bundle:
+  name: vendor_ingestion
+
+include:
+  - resources/jobs/*.yml
+
+sync:
+  include:
+    - seeds/config/**
+    - seeds/source/**
+    - seeds/schema/**
+
+variables:
+  env:
+    description: "The deployment environment (dev, test, prod)"
+    default: "dev" # Default if no target is specified
+  budget_policy_id:
+    description: "Serverless budget policy ID for this environment"
+
+targets:
+  dev:
+    default: true
+    mode: development
+    variables:
+      env: "dev"
+      budget_policy_id: "2db27731-3181-4944-9125-fe43faf237ee"
+    workspace:
+      host: https://cvsh-aws-hcb-dev.cloud.databricks.com/

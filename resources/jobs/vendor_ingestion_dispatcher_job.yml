@@ -1,0 +1,23 @@
+resources:
+  jobs:
+    vendor_ingestion_dispatcher_job:
+      name: vendor_ingestion_dispatcher_job
+      budget_policy_id: ${var.budget_policy_id}
+      email_notifications:
+        on_failure:
+          - roderick.fernan2@aetna.com
+        on_success:
+          - roderick.fernan2@aetna.com
+      schedule:
+        quartz_cron_expression: "0 0 6-22/2 * * ?" ### "0 0 2/6 * * ?" ### Every 6 hours starting at 02:00, 08:00, 14:00, 20:00
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      parameters:
+        - name: env 
+          default: ${var.env}
+      tasks:
+        - task_key: dispatcher
+          notebook_task:
+            notebook_path: ../../notebooks/005_dispatcher.py
+            base_parameters:
+              env: "{{job.parameters.env}}"
